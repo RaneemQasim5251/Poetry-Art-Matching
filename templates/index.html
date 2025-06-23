@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>مُطابِق القصائد مع اللوحات الفنية</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    body {
+      background-color: #fdfaf6;
+      color: #333;
+      font-family: 'Cairo', sans-serif;
+      direction: rtl;
+      text-align: right;
+    }
+    .container {
+      margin-top: 50px;
+    }
+    .art-image {
+      max-width: 100%;
+      height: auto;
+      border: 3px solid #ccc;
+      border-radius: 15px;
+      box-shadow: 0px 8px 15px rgba(0, 0, 0, 0.1);
+    }
+    .poem-box {
+      background-color: #ffffff;
+      border: 1px solid #ddd;
+      border-radius: 15px;
+      padding: 20px;
+      margin-top: 20px;
+      box-shadow: 0px 8px 15px rgba(0, 0, 0, 0.1);
+    }
+    .header-title {
+      font-size: 2.5rem;
+      font-weight: bold;
+      color: #4c6ef5;
+    }
+    .match-button {
+      background-color: #4c6ef5;
+      color: #fff;
+      border-radius: 25px;
+      padding: 10px 30px;
+      font-size: 1.2rem;
+      font-weight: bold;
+      transition: all 0.3s ease;
+    }
+    .match-button:hover {
+      background-color: #3749b0;
+      transform: scale(1.05);
+    }
+    h3 {
+      color: #3749b0;
+      font-weight: bold;
+    }
+    .art-title {
+      font-weight: bold;
+      font-size: 1.2rem;
+      color: #444;
+    }
+    .loading {
+      font-size: 1.2em;
+      color: #666;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 class="text-center header-title">مُطابِق القصائد مع اللوحات الفنية</h1>
+    <div class="row mt-5">
+      <div class="col-md-6">
+        <h3>اللوحة الفنية</h3>
+        <img id="artImage" src="/static/placeholder.jpg" alt="Artwork" class="art-image">
+        <p id="artTitle" class="mt-3 art-title">العنوان: <span id="artTitleText">عنوان الصورة</span></p>
+        <p><strong>النوع:</strong> <span id="artGenre">غير معروف</span></p>
+        <p><strong>الفنان:</strong> <span id="artArtist">غير معروف</span></p>
+        <p><strong>الوصف:</strong> <span id="artDescription">لا يوجد وصف.</span></p>
+      </div>
+      <div class="col-md-6">
+        <h3>القصيدة المطابقة</h3>
+        <div id="poemBox" class="poem-box">
+          <p class="loading">جاري تحميل القصيدة...</p>
+        </div>
+      </div>
+    </div>
+    <div class="text-center mt-5">
+      <button id="matchButton" class="btn match-button">مطابقة جديدة <i class="fas fa-sync-alt"></i></button>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+  <script>
+    function fetchMatchedPoem() {
+      const painting_text = "وصف للوحة الفنية.";
+      $('#poemBox').html('<p class="loading">جاري تحميل القصيدة...</p>');
+      $.ajax({
+        url: '/match',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({ painting_text: painting_text }),
+        success: function(response) {
+          const poem = response.matched_poem;
+          const image = response.art_image;
+          const title = response.art_title;
+          const genre = response.art_genre;
+          const artist = response.art_artist;
+          const description = response.art_description;
+
+          $('#artImage').attr('src', image);
+          $('#artTitleText').text(title);
+          $('#artGenre').text(genre);
+          $('#artArtist').text(artist);
+          $('#artDescription').text(description);
+
+          let poemHtml = `<h4>${poem.poem_title}</h4><p>`;
+          if (Array.isArray(poem.poem_verses)) {
+            poemHtml += poem.poem_verses.join('<br>');
+          } else {
+            poemHtml += poem.poem_verses;
+          }
+          poemHtml += `</p><p><em>بواسطة: ${poem.poet_name}</em></p>`;
+          $('#poemBox').html(poemHtml);
+        },
+        error: function() {
+          $('#poemBox').html('<p class="text-danger">حدث خطأ أثناء جلب القصيدة. حاول مرة أخرى.</p>');
+        }
+      });
+    }
+
+    $(document).ready(function() {
+      fetchMatchedPoem();
+      $('#matchButton').click(fetchMatchedPoem);
+    });
+  </script>
+</body>
+</html>
